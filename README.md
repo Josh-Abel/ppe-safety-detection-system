@@ -40,6 +40,30 @@ Current product layer:
 * Docker container for reproducible backend deployment
 * Prediction logging to CSV for basic observability
 * React + Vite frontend demo with Image Mode, Video Mode, and Live Camera Mode
+* Live API deployed on Google Cloud Run
+
+## Live Demo
+
+**Service URL:** https://ppe-safety-api-987363068505.europe-west1.run.app
+
+**Interactive docs:** https://ppe-safety-api-987363068505.europe-west1.run.app/docs
+
+The FastAPI backend is deployed on Google Cloud Run from the Docker image in this repo. The React frontend runs locally against the API (see [Frontend](#frontend)).
+
+Test health:
+
+```bash
+curl https://ppe-safety-api-987363068505.europe-west1.run.app/health
+```
+
+Test image prediction (requires cloning the repo so `sample_data/example_images/image1.jpg` is available locally):
+
+```bash
+curl -X POST "https://ppe-safety-api-987363068505.europe-west1.run.app/predict?conf=0.25&include_image=false" \
+  -F "file=@sample_data/example_images/image1.jpg"
+```
+
+The first request after idle time may be slow due to Cloud Run cold start.
 
 ## Repository Structure
 
@@ -396,6 +420,16 @@ curl -X POST "http://localhost:8000/predict?conf=0.25&include_image=false" \
 
 Interactive API docs are available at `http://localhost:8000/docs` while the container is running.
 
+### Production (Google Cloud Run)
+
+The same Docker image is deployed to Google Cloud Run:
+
+```text
+https://ppe-safety-api-987363068505.europe-west1.run.app
+```
+
+See [Live Demo](#live-demo) for curl examples against the deployed service.
+
 ## Frontend
 
 A React + Vite demo is in `frontend/`. It connects to the FastAPI backend and provides three modes.
@@ -522,7 +556,7 @@ The model was evaluated using YOLO object detection metrics and additional diagn
 
 ### 5. Deployment
 
-A FastAPI inference server serves the model via REST endpoints. The backend is packaged in a Docker container for reproducible deployment. A React + Vite frontend provides a browser-based demo for image, video, and live camera inference.
+A FastAPI inference server serves the model via REST endpoints. The backend is packaged in a Docker container and deployed to Google Cloud Run. A React + Vite frontend provides a browser-based demo for image, video, and live camera inference.
 
 ### 6. Observability
 
@@ -545,7 +579,6 @@ The model may struggle with:
 ## Future Improvements
 
 * Add confidence and latency monitoring dashboards
-* Test on external real-world images
 * Try larger YOLO variants (YOLOv11s/m)
 * Use low-confidence predictions for active learning
 
@@ -559,5 +592,5 @@ Baseline weights saved     complete
 Inference API              complete  (image, video, video-stream endpoints)
 Prediction logging         complete
 Frontend demo              complete  (Image Mode, Video Mode, Live Camera Mode)
-Dockerized deployment      complete  (FastAPI backend in Docker)
+Cloud deployment           complete  (FastAPI on Google Cloud Run)
 ```
