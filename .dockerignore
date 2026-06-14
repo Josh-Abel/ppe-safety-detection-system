@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+frontend/node_modules
+frontend/dist
+datasets
+docs
+experiments
+notebooks
+.matplotlib-cache
+.DS_Store

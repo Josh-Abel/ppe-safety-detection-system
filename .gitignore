@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Matplotlib
+/.matplotlib-cache
+
+# Local dataset (keep datasets/data.yaml tracked)
+datasets/train/
+datasets/valid/
+datasets/test/
+
+# macOS
+.DS_Store
+
+# Environment
+.env
+.env.*
