@@ -42,6 +42,15 @@ Current product layer:
 * React + Vite frontend demo deployed on Vercel (Image Mode, Video Mode, Live Camera Mode)
 * Live API deployed on Google Cloud Run
 
+## Tech Stack
+
+- Model: YOLOv11n, Ultralytics
+- Backend: FastAPI, Python, OpenCV, ffmpeg
+- Frontend: React, Vite
+- Deployment: Docker, Google Cloud Run, Vercel
+- Observability: CSV prediction logging with latency, confidence, detection count, and low-confidence flags
+- Analysis: Jupyter notebooks, pandas, matplotlib, seaborn
+
 ## Live Demo
 
 **Web app:** https://ppe-safety-detection-system-mu.vercel.app/
@@ -66,6 +75,31 @@ curl -X POST "https://ppe-safety-api-987363068505.europe-west1.run.app/predict?c
 ```
 
 The first request after idle time may be slow due to Cloud Run cold start.
+
+## Demo Preview
+
+![PPE Safety Detector demo](docs/demo_image_mode.png)
+
+## Architecture
+
+```text
+User Browser
+    |
+    | uploads image/video or webcam frame
+    v
+Vercel Frontend
+    |
+    | HTTP request
+    v
+Google Cloud Run Backend
+    |
+    | FastAPI endpoint
+    v
+YOLOv11n Model
+    |
+    v
+JSON detections + annotated image/video
+```
 
 ## Repository Structure
 
@@ -156,6 +190,18 @@ The trained baseline weights are saved in:
 ```text
 models/baseline_weights/best.pt
 ```
+
+## Baseline Results
+
+| Metric | Value |
+|---|---:|
+| mAP50 | 0.850 |
+| mAP50-95 | 0.649 |
+| Precision | 0.843 |
+| Recall | 0.845 |
+| Avg latency | 37.0 ms/image |
+
+The model performs best on helmets and vests, while gloves and pants are more difficult due to smaller object size, occlusion, and crowded scenes.
 
 ## Evaluation
 
@@ -253,7 +299,8 @@ Example command to run from the camera:
 python3 scripts/predict.py \                                                  
   --weights models/baseline_weights/best.pt \
   --source 0 \                         
-  --conf 0.25 --display
+  --conf 0.25 \
+  --display
 ```
 
 Prediction metadata is appended to:
@@ -432,6 +479,12 @@ https://ppe-safety-api-987363068505.europe-west1.run.app
 
 See [Live Demo](#live-demo) for curl examples against the deployed service.
 
+## Deployment Notes
+
+The backend is deployed as a Dockerized FastAPI service on Google Cloud Run. The frontend is deployed separately on Vercel and calls the Cloud Run API through the `VITE_API_BASE_URL` environment variable.
+
+Because Cloud Run may scale to zero, the first request after a period of inactivity can be slower due to cold start. Subsequent requests are faster once the container is warm.
+
 ## Frontend
 
 A React + Vite demo is in `frontend/`. The deployed app is at https://ppe-safety-detection-system-mu.vercel.app/. It connects to the FastAPI backend and provides three modes.
@@ -578,11 +631,19 @@ The model may struggle with:
 * PPE that blends into the background
 * images that differ significantly from the training data
 
+## What I Learned
+
+This project helped me practice the full ML product workflow: defining a practical computer vision task, inspecting and versioning dataset assumptions, training and evaluating a YOLO model, wrapping inference in a FastAPI service, containerizing the backend, deploying to Google Cloud Run, connecting a React frontend, and adding basic prediction logging for observability.
+
 ## Future Improvements
 
 * Add confidence and latency monitoring dashboards
 * Try larger YOLO variants (YOLOv11s/m)
 * Use low-confidence predictions for active learning
+
+## Privacy Note
+
+Uploaded images and videos are processed for inference by the backend. This prototype logs prediction metadata such as latency, detection count, predicted classes, and confidence scores, but it is not intended to store user-uploaded media permanently.
 
 ## Project Status
 
@@ -591,8 +652,9 @@ EDA                        complete
 Baseline YOLO training     complete
 Evaluation                 complete
 Baseline weights saved     complete
-Inference API              complete  (image, video, video-stream endpoints)
+Inference API              complete
 Prediction logging         complete
-Frontend demo              complete  (Vercel — Image, Video, Live Camera Mode)
-Cloud deployment           complete  (FastAPI on Google Cloud Run)
+Frontend demo              complete
+Dockerized backend         complete
+Cloud deployment           complete
 ```
