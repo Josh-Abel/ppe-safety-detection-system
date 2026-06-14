@@ -13,10 +13,21 @@ from app.schemas import HealthResponse, PredictionResponse, VideoPredictionRespo
 
 MODEL_PATH = os.getenv("PPE_MODEL_PATH", DEFAULT_MODEL_PATH)
 
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,"
+    "http://127.0.0.1:5173,"
+    "https://ppe-safety-detection-system-mu.vercel.app"
+)
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app = FastAPI(title="PPE Safety Detector API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

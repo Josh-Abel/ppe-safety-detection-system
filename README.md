@@ -39,16 +39,18 @@ Current product layer:
 * FastAPI backend with image, video, and streaming inference endpoints
 * Docker container for reproducible backend deployment
 * Prediction logging to CSV for basic observability
-* React + Vite frontend demo with Image Mode, Video Mode, and Live Camera Mode
+* React + Vite frontend demo deployed on Vercel (Image Mode, Video Mode, Live Camera Mode)
 * Live API deployed on Google Cloud Run
 
 ## Live Demo
 
-**Service URL:** https://ppe-safety-api-987363068505.europe-west1.run.app
+**Web app:** https://ppe-safety-detection-system-mu.vercel.app/
+
+**API:** https://ppe-safety-api-987363068505.europe-west1.run.app
 
 **Interactive docs:** https://ppe-safety-api-987363068505.europe-west1.run.app/docs
 
-The FastAPI backend is deployed on Google Cloud Run from the Docker image in this repo. The React frontend runs locally against the API (see [Frontend](#frontend)).
+The React frontend is deployed on Vercel and calls the FastAPI backend on Google Cloud Run. You can also run the frontend locally (see [Frontend](#frontend)).
 
 Test health:
 
@@ -432,7 +434,7 @@ See [Live Demo](#live-demo) for curl examples against the deployed service.
 
 ## Frontend
 
-A React + Vite demo is in `frontend/`. It connects to the FastAPI backend and provides three modes.
+A React + Vite demo is in `frontend/`. The deployed app is at https://ppe-safety-detection-system-mu.vercel.app/. It connects to the FastAPI backend and provides three modes.
 
 ### Running the frontend
 
@@ -556,7 +558,7 @@ The model was evaluated using YOLO object detection metrics and additional diagn
 
 ### 5. Deployment
 
-A FastAPI inference server serves the model via REST endpoints. The backend is packaged in a Docker container and deployed to Google Cloud Run. A React + Vite frontend provides a browser-based demo for image, video, and live camera inference.
+A FastAPI inference server serves the model via REST endpoints. The backend is packaged in a Docker container and deployed to Google Cloud Run. The React + Vite frontend is deployed on Vercel for browser-based image, video, and live camera inference.
 
 ### 6. Observability
 
@@ -591,6 +593,6 @@ Evaluation                 complete
 Baseline weights saved     complete
 Inference API              complete  (image, video, video-stream endpoints)
 Prediction logging         complete
-Frontend demo              complete  (Image Mode, Video Mode, Live Camera Mode)
+Frontend demo              complete  (Vercel — Image, Video, Live Camera Mode)
 Cloud deployment           complete  (FastAPI on Google Cloud Run)
 ```
