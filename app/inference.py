@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import shutil
 import subprocess
+import threading
 import time
 from pathlib import Path
 from typing import Any, Callable
@@ -17,9 +18,25 @@ from app.schemas import Detection, PredictionResponse, VideoFrameResult, VideoPr
 IMAGE_EXTENSIONS = {".bmp", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"}
 DEFAULT_MODEL_PATH = "models/baseline_weights/best.pt"
 
+# Cloud Run serves one model instance for all requests. Ultralytics fuses Conv+BN on
+# first predict; concurrent first-use races can raise AttributeError: 'Conv' has no 'bn'.
+_INFERENCE_LOCK = threading.Lock()
+
+
+def _run_predict(model: YOLO, source: Any, conf: float) -> list[Any]:
+    with _INFERENCE_LOCK:
+        return model.predict(source=source, conf=conf, verbose=False)
+
 
 def load_model(weights_path: str | Path = DEFAULT_MODEL_PATH) -> YOLO:
-    return YOLO(str(weights_path))
+    model = YOLO(str(weights_path))
+    with _INFERENCE_LOCK:
+        if hasattr(model.model, "fuse") and not model.model.is_fused():
+            model.model.fuse()
+        # Warm up predictor initialization before concurrent traffic arrives.
+        warmup = np.zeros((640, 640, 3), dtype=np.uint8)
+        model.predict(source=warmup, conf=0.25, verbose=False)
+    return model
 
 
 def read_image(image_path: str | Path) -> np.ndarray:
@@ -93,7 +110,7 @@ def predict_image(
     log_prediction: bool = True,
 ) -> tuple[PredictionResponse, np.ndarray]:
     start = time.perf_counter()
-    results = model.predict(source=image, conf=conf, verbose=False)
+    results = _run_predict(model, image, conf)
     latency_ms = int(round((time.perf_counter() - start) * 1000))
 
     result = results[0]
@@ -264,7 +281,7 @@ def predict_video_bytes(
 
             if source_frame_idx % frame_step == 0:
                 t_frame = time.perf_counter()
-                results = model.predict(source=frame, conf=conf, verbose=False)
+                results = _run_predict(model, frame, conf)
                 latency_ms = int(round((time.perf_counter() - t_frame) * 1000))
 
                 result = results[0]

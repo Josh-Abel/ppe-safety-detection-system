@@ -5,6 +5,8 @@ import ImageResultCard from "./ImageResultCard";
 
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_IMAGE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const EXAMPLE_IMAGE_URL =
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIphOXcva2xes9eWXOJOCV6xBwqXOL365X3Q&s";
 
 export default function ImageMode() {
   const [results, setResults] = useState([]);
@@ -93,6 +95,21 @@ export default function ImageMode() {
     await runPredictions(createResultItems(validFiles));
   };
 
+  const loadImageFromUrl = async (url) => {
+    setGlobalError("");
+    setUrlLoading(true);
+
+    try {
+      const file = await fetchImageFileFromUrl(url, MAX_IMAGE_BYTES);
+      await runPredictions(createResultItems([file]));
+      setImageUrl("");
+    } catch (error) {
+      setGlobalError(error.message || "Could not load image from URL.");
+    } finally {
+      setUrlLoading(false);
+    }
+  };
+
   const handleUrlSubmit = async (event) => {
     event.preventDefault();
 
@@ -102,18 +119,7 @@ export default function ImageMode() {
       return;
     }
 
-    setGlobalError("");
-    setUrlLoading(true);
-
-    try {
-      const file = await fetchImageFileFromUrl(trimmedUrl, MAX_IMAGE_BYTES);
-      await runPredictions(createResultItems([file]));
-      setImageUrl("");
-    } catch (error) {
-      setGlobalError(error.message || "Could not load image from URL.");
-    } finally {
-      setUrlLoading(false);
-    }
+    await loadImageFromUrl(trimmedUrl);
   };
 
   return (
@@ -141,12 +147,17 @@ export default function ImageMode() {
         <label className="url-form__label" htmlFor="image-url">
           Or paste an image URL
         </label>
+        <p className="hint">
+          Use the direct image address (the link that opens the image file itself), not a
+          webpage URL. It should usually end in .jpg, .png, .webp, or similar, or point
+          straight to an image like the example below.
+        </p>
         <div className="url-form__row">
           <input
             id="image-url"
             type="url"
             className="url-form__input"
-            placeholder="https://example.com/worker.jpg"
+            placeholder={EXAMPLE_IMAGE_URL}
             value={imageUrl}
             onChange={(event) => setImageUrl(event.target.value)}
             disabled={urlLoading}
@@ -159,10 +170,25 @@ export default function ImageMode() {
             {urlLoading ? "Loading..." : "Load from URL"}
           </button>
         </div>
-        <p className="hint">
-          The remote site must allow browser access (CORS). If loading fails, download
-          the image and upload it locally instead.
-        </p>
+        <div className="url-example">
+          <img
+            src={EXAMPLE_IMAGE_URL}
+            alt="Example construction worker with helmet and vest"
+            className="url-example__thumb"
+          />
+          <div className="url-example__body">
+            <p className="hint">Example image URL (works without CORS issues):</p>
+            <code className="url-example__url">{EXAMPLE_IMAGE_URL}</code>
+            <button
+              type="button"
+              className="btn btn--secondary url-example__btn"
+              disabled={urlLoading}
+              onClick={() => loadImageFromUrl(EXAMPLE_IMAGE_URL)}
+            >
+              {urlLoading ? "Loading..." : "Try example"}
+            </button>
+          </div>
+        </div>
       </form>
 
       {globalError ? <div className="error-banner">{globalError}</div> : null}
