@@ -63,7 +63,7 @@ async def predict(file: UploadFile = File(...), conf: float = 0.25, include_imag
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-_MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
+_MAX_VIDEO_BYTES = 30 * 1024 * 1024  # 30 MB (Cloud Run request limit is ~32 MB)
 
 
 @app.post("/predict-video", response_model=VideoPredictionResponse)

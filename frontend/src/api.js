@@ -1,8 +1,24 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const DEPLOYED_API_BASE_URL =
+  "https://ppe-safety-api-987363068505.europe-west1.run.app";
 
-const BACKEND_DOWN_MESSAGE =
-  "Backend is not running. Start it with: uvicorn app.main:app --reload";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? DEPLOYED_API_BASE_URL : "http://127.0.0.1:8000");
+
+// Cloud Run rejects request bodies above ~32 MB before they reach FastAPI (HTTP 413,
+// often without CORS headers), which browsers surface as a generic network failure.
+export const MAX_DEPLOYED_VIDEO_BYTES = 30 * 1024 * 1024;
+
+function raiseIfNetworkError(error, hint) {
+  if (error instanceof TypeError) {
+    const localHint = import.meta.env.PROD
+      ? hint ||
+        "Check your connection, try a smaller upload, and confirm VITE_API_BASE_URL is set on Vercel."
+      : "Start the API with: uvicorn app.main:app --reload";
+    throw new Error(`Could not reach the backend. ${localHint}`);
+  }
+  throw error;
+}
 
 async function parseErrorResponse(response) {
   try {
@@ -27,10 +43,7 @@ export async function checkHealth() {
     }
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(BACKEND_DOWN_MESSAGE);
-    }
-    throw error;
+    raiseIfNetworkError(error);
   }
 }
 
@@ -87,6 +100,13 @@ export async function fetchImageFileFromUrl(imageUrl, maxBytes) {
 }
 
 export async function predictVideoStream(file, { conf = 0.25 } = {}, onProgress) {
+  if (import.meta.env.PROD && file.size > MAX_DEPLOYED_VIDEO_BYTES) {
+    throw new Error(
+      `Video is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). ` +
+        `Maximum upload size on the deployed API is ${MAX_DEPLOYED_VIDEO_BYTES / (1024 * 1024)} MB.`,
+    );
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
@@ -99,10 +119,14 @@ export async function predictVideoStream(file, { conf = 0.25 } = {}, onProgress)
       body: formData,
     });
   } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(BACKEND_DOWN_MESSAGE);
-    }
-    throw error;
+    const tooLargeForCloudRun =
+      import.meta.env.PROD && file.size > MAX_DEPLOYED_VIDEO_BYTES;
+    raiseIfNetworkError(
+      error,
+      tooLargeForCloudRun
+        ? `Videos must be under ${MAX_DEPLOYED_VIDEO_BYTES / (1024 * 1024)} MB on the deployed API (Cloud Run upload limit).`
+        : undefined,
+    );
   }
 
   if (!response.ok) {
@@ -158,10 +182,7 @@ export async function predictVideo(file, { conf = 0.25 } = {}) {
       body: formData,
     });
   } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(BACKEND_DOWN_MESSAGE);
-    }
-    throw error;
+    raiseIfNetworkError(error);
   }
 
   if (!response.ok) {
@@ -190,10 +211,7 @@ export async function predictImage(file, { conf = 0.25, includeImage = true } = 
       body: formData,
     });
   } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(BACKEND_DOWN_MESSAGE);
-    }
-    throw error;
+    raiseIfNetworkError(error);
   }
 
   if (!response.ok) {

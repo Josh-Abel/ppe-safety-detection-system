@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { predictVideoStream } from "../api";
+import { MAX_DEPLOYED_VIDEO_BYTES, predictVideoStream } from "../api";
 import { buildSafetySummary, downloadBase64Video, isValidVideoFile } from "../utils/ppe";
 
-const MAX_VIDEO_SIZE_MB = 50;
-const MAX_VIDEO_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+const MAX_VIDEO_SIZE_MB = MAX_DEPLOYED_VIDEO_BYTES / (1024 * 1024);
+const MAX_VIDEO_BYTES = MAX_DEPLOYED_VIDEO_BYTES;
 const MAX_VIDEO_DURATION_SEC = 20;
 
 function dataUriToBlobUrl(dataUri) {
