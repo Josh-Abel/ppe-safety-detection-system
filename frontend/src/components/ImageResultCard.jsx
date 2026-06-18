@@ -1,4 +1,5 @@
 import { downloadBase64Image, getAnnotatedFilename } from "../utils/ppe";
+import { USES_CLOUD_DEPLOYED_API } from "../api";
 import DetectionsTable from "./DetectionsTable";
 import PredictionSummary from "./PredictionSummary";
 
@@ -23,7 +24,7 @@ export default function ImageResultCard({
     <article className="result-card">
       <header className="result-card__header">
         <h3>{filename}</h3>
-        {loading ? <span className="badge badge--loading">Processing...</span> : null}
+        {loading ? <span className="badge badge--loading">Processing&hellip;</span> : null}
       </header>
 
       {error ? <div className="error-banner">{error}</div> : null}
@@ -39,7 +40,11 @@ export default function ImageResultCard({
             <img src={prediction.output_image} alt={`Annotated ${filename}`} />
           ) : (
             <div className="image-placeholder">
-              {loading ? "Running prediction..." : "Annotated image not available."}
+              {loading
+                ? USES_CLOUD_DEPLOYED_API
+                  ? "Waiting on GCP model (this may take a few seconds)\u2026"
+                  : "Running prediction\u2026"
+                : "Annotated image not available."}
             </div>
           )}
         </figure>

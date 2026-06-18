@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchImageFileFromUrl, predictImage } from "../api";
+import { fetchImageFileFromUrl, predictImage, USES_CLOUD_DEPLOYED_API } from "../api";
 import { isValidImageFile } from "../utils/ppe";
 import ImageResultCard from "./ImageResultCard";
 
@@ -127,6 +127,19 @@ export default function ImageMode() {
       <p className="mode-note">
         This is a prototype demo, not a real safety compliance system.
       </p>
+
+      <div className="info-banner info-banner--warning">
+        {USES_CLOUD_DEPLOYED_API ? (
+          <>
+            Predictions are sent to a GCP-hosted model. Each image may take several
+            seconds due to network and inference latency.
+          </>
+        ) : (
+          <>
+            Predictions may take a few seconds depending on backend latency.
+          </>
+        )}
+      </div>
 
       <label className="upload-label">
         <span className="btn btn--primary">Choose image(s)</span>

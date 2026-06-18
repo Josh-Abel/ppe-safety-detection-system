@@ -5,6 +5,9 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.PROD ? DEPLOYED_API_BASE_URL : "http://127.0.0.1:8000");
 
+export const USES_CLOUD_DEPLOYED_API =
+  import.meta.env.PROD || API_BASE_URL.includes("run.app");
+
 // Cloud Run rejects request bodies above ~32 MB before they reach FastAPI (HTTP 413,
 // often without CORS headers), which browsers surface as a generic network failure.
 export const MAX_DEPLOYED_VIDEO_BYTES = 30 * 1024 * 1024;

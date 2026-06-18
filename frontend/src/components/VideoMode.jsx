@@ -5,6 +5,8 @@ import { buildSafetySummary, downloadBase64Video, isValidVideoFile } from "../ut
 const MAX_VIDEO_SIZE_MB = MAX_DEPLOYED_VIDEO_BYTES / (1024 * 1024);
 const MAX_VIDEO_BYTES = MAX_DEPLOYED_VIDEO_BYTES;
 const MAX_VIDEO_DURATION_SEC = 20;
+const EXAMPLE_VIDEO_URL = "/example_videos/annotated_example_video1.mp4";
+const EXAMPLE_VIDEO_SOURCE_URL = "https://youtube.com/shorts/fkVrphiW8KY";
 
 function dataUriToBlobUrl(dataUri) {
   const [header, base64Data] = dataUri.split(",");
@@ -20,6 +22,7 @@ function dataUriToBlobUrl(dataUri) {
 
 export default function VideoMode() {
   const videoRef = useRef(null);
+  const exampleVideoRef = useRef(null);
   const previewUrlRef = useRef("");
   const outputUrlRef = useRef("");
 
@@ -31,6 +34,8 @@ export default function VideoMode() {
   const [result, setResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState({ processed: 0, total: 0 });
+  const [showExampleModal, setShowExampleModal] = useState(false);
+  const [exampleVideoError, setExampleVideoError] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -42,6 +47,26 @@ export default function VideoMode() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!showExampleModal) {
+      exampleVideoRef.current?.pause();
+      setExampleVideoError(false);
+      return undefined;
+    }
+
+    setExampleVideoError(false);
+    exampleVideoRef.current?.load();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setShowExampleModal(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showExampleModal]);
 
   const resetVideoState = () => {
     if (previewUrlRef.current) {
@@ -144,12 +169,23 @@ export default function VideoMode() {
 
   return (
     <section className="mode-panel">
-      <label className="upload-label">
-        <span className="btn btn--primary">Choose video</span>
-        <input type="file" accept="video/*" onChange={handleFileChange} hidden />
-      </label>
+      <div className="button-row video-upload-actions">
+        <label className="upload-label">
+          <span className="btn btn--primary">Choose video</span>
+          <input type="file" accept="video/*" onChange={handleFileChange} hidden />
+        </label>
+        <button
+          type="button"
+          className="btn btn--secondary"
+          onClick={() => setShowExampleModal(true)}
+        >
+          See example output
+        </button>
+      </div>
       <p className="hint">
         Max file size: {MAX_VIDEO_SIZE_MB} MB. Max duration: {MAX_VIDEO_DURATION_SEC} seconds.
+        Don&apos;t have a construction video handy? Watch the example to see what annotated
+        output looks like.
       </p>
 
       {error ? <div className="error-banner">{error}</div> : null}
@@ -258,6 +294,66 @@ export default function VideoMode() {
               );
             })}
           </details>
+        </div>
+      ) : null}
+
+      {showExampleModal ? (
+        <div
+          className="video-modal-overlay"
+          role="presentation"
+          onClick={() => setShowExampleModal(false)}
+        >
+          <div
+            className="video-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="example-video-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="video-modal__header">
+              <h2 id="example-video-title" className="video-modal__title">
+                Example annotated output
+              </h2>
+              <button
+                type="button"
+                className="video-modal__close"
+                onClick={() => setShowExampleModal(false)}
+                aria-label="Close example video"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="video-modal__description">
+              This sample shows how the detector labels helmets, vests, gloves, and pants on
+              each frame.
+            </p>
+            <div className="video-modal__player">
+              <video
+                ref={exampleVideoRef}
+                src={EXAMPLE_VIDEO_URL}
+                controls
+                playsInline
+                preload="auto"
+                onError={() => setExampleVideoError(true)}
+              />
+            </div>
+            {exampleVideoError ? (
+              <p className="error-banner video-modal__error">
+                The example video could not be loaded. Try refreshing the page.
+              </p>
+            ) : null}
+            <p className="video-modal__attribution">
+              Source footage from{" "}
+              <a
+                href={EXAMPLE_VIDEO_SOURCE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                this YouTube Short
+              </a>
+              .
+            </p>
+          </div>
         </div>
       ) : null}
     </section>
